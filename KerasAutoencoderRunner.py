@@ -13,14 +13,15 @@ def main(args):
     assert epochs > 0
     assert args.hidden_dim > args.hidden2_dim
 
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}".format(args.learning_rate,
+    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-V{}".format(args.learning_rate,
                                                       args.hidden_dim,
                                                       args.hidden2_dim,
                                                       args.batch_size,
                                                       args.latent_dim,
                                                       args.n_batches,
                                                       args.batches_per_epoch,
-                                                      args.vocab_size)
+                                                      args.vocab_size,
+                                                         args.validation_size)
     
     print("Running with params", params)
     
@@ -31,7 +32,7 @@ def main(args):
 
     # Prepare reference to input data
     train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord", batch_size=args.batch_size, n_batches=args.n_batches)
-    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord", n_pages=512)
+    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord", n_pages=args.validation_size)
 
     # Initialize Variables
     init = tf.global_variables_initializer()
@@ -107,6 +108,8 @@ if __name__ == '__main__':
                        'of the saved model, but training cannot be resumed.')
     parser.add_argument('--log-dir', type=str, default="logs/",
                         help='Directory to log output details.')
+    parser.add_argument('--validation-size', type=int, default=1024,
+                        help='Number of pages to use for cross-validation.')    
 
     parser.add_argument('training_path', type=str, help="Location of TFRecords for training.")
     parser.add_argument('cross_validation_path', type=str, help="Location of TFRecords for cross-validation.")
