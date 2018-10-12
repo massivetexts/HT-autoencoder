@@ -33,7 +33,9 @@ def getParser():
                         help='Number of pages to use for cross-validation.')
     parser.add_argument('--log-device', '-d', action='store_true',
                     help='Turn on device logging. Useful for debugging whether computation is on expected'
-                        'CPUs or GPUs, otherwise unnecessary.')    
+                        'CPUs or GPUs, otherwise unnecessary.')   
+    parser.add_argument('--idf_path', '-i', type=str,
+                help='Path to a .npy file with a {vocab-size} 1-D array of IDF term weights.')   
 
     parser.add_argument('training_path', type=str, help="Location of TFRecords for training.")
     parser.add_argument('cross_validation_path', type=str, help="Location of TFRecords for cross-validation.")
@@ -42,7 +44,10 @@ def getParser():
 
 def param_string(args):
     ''' Return a short string of the run parameters'''
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}".format(args.learning_rate, args.hidden_dim, args.hidden2_dim,
-                                                  args.batch_size, args.latent_dim, args.n_batches,
-                                                  args.batches_per_epoch, args.vocab_size, args.trim_vocab)
+    idf = "-idf" if args.idf_path else ""
+    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}{}".format(args.learning_rate, args.hidden_dim,
+                                                             args.hidden2_dim, args.batch_size,
+                                                             args.latent_dim, args.n_batches,
+                                                             args.batches_per_epoch, args.vocab_size,
+                                                             args.trim_vocab, idf)
     return params

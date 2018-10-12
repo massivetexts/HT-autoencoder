@@ -26,10 +26,10 @@ def main(args):
     # Prepare reference to input data
     train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord",
                                       batch_size=args.batch_size, n_batches=args.n_batches,
-                                      trim_dim=args.trim_vocab)
+                                      trim_dim=args.trim_vocab, idf_path=args.idf_path)
     val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord",
                                          n_pages=args.validation_size,
-                                         trim_dim=args.trim_vocab)
+                                         trim_dim=args.trim_vocab, idf_path=args.idf_path)
 
     # Initialize Variables
     init = tf.global_variables_initializer()
