@@ -18,13 +18,18 @@ def main(args):
     print("Running with params", params)
     
     # Compile model
-    vae = create_vae(args.vocab_size, args.hidden_dim, args.latent_dim,
+    vae = create_vae((args.trim_vocab if args.trim_vocab else args.vocab_size),
+                     args.hidden_dim, args.latent_dim,
                      intermediate_dim2=args.hidden2_dim,
                      learning_rate=args.learning_rate, epsilon_std=1.0)
 
     # Prepare reference to input data
-    train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord", batch_size=args.batch_size, n_batches=args.n_batches)
-    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord", n_pages=args.validation_size)
+    train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord",
+                                      batch_size=args.batch_size, n_batches=args.n_batches,
+                                      trim_dim=args.trim_vocab)
+    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord",
+                                         n_pages=args.validation_size,
+                                         trim_dim=args.trim_vocab)
 
     # Initialize Variables
     init = tf.global_variables_initializer()
@@ -33,7 +38,7 @@ def main(args):
     # Load Cross-Validation data into memory
 
     val_iter = val_dataset.make_one_shot_iterator()
-    val_data = val_iter.get_next()['sparse']
+    val_data = val_iter.get_next()
     val_data_dense = tf.sparse_to_dense(val_data.indices,
                                                 val_data.dense_shape,
                                                 val_data.values).eval()
@@ -41,7 +46,17 @@ def main(args):
     # Create an Iterator for the training data
     train_iter = train_dataset.make_one_shot_iterator()
     traindata = train_iter.get_next()
-    traindata.set_shape({args.batch_size, args.vocab_size})
+    
+    if args.trim_vocab == 0:
+        width = args.vocab_size
+    else:
+        width = args.trim_vocab
+
+    # Don't specify number of samples, just the width of the samples
+    # For some reason, the Model specifies a large number of random samples,
+    # But it doesn't seem to affect the quality of models
+    traindata.set_shape({None,
+                         args.trim_vocab if args.trim_vocab else args.vocab_size})
     
     start = time.time()
 

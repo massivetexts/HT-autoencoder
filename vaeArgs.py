@@ -7,6 +7,9 @@ def getParser():
                         help='Size of training batches')
     parser.add_argument('--vocab-size', '-v', type=int, default=202498,
                         help='Size of the vocabulary.')
+    parser.add_argument('--trim-vocab', '-t', type=int, default=0,
+                        help='Cut off the original vocabulary. '
+                        'Only keeps the top {trim-vocab} words for training.')
     parser.add_argument('--latent-dim', '-l', type=int, default=200,
                         help='Number of output dimensions.')
     parser.add_argument('--hidden-dim', '-H', type=int, default=1500,
@@ -39,7 +42,7 @@ def getParser():
 
 def param_string(args):
     ''' Return a short string of the run parameters'''
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}".format(args.learning_rate, args.hidden_dim, args.hidden2_dim,
+    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}".format(args.learning_rate, args.hidden_dim, args.hidden2_dim,
                                                   args.batch_size, args.latent_dim, args.n_batches,
-                                                  args.batches_per_epoch, args.vocab_size)
+                                                  args.batches_per_epoch, args.vocab_size, args.trim_vocab)
     return params
