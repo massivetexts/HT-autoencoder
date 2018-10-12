@@ -27,9 +27,19 @@ def getParser():
     parser.add_argument('--log-dir', type=str, default="logs/",
                         help='Directory to log output details.')
     parser.add_argument('--validation-size', '-V', type=int, default=1024,
-                        help='Number of pages to use for cross-validation.')    
+                        help='Number of pages to use for cross-validation.')
+    parser.add_argument('--log-device', '-d', action='store_true',
+                    help='Turn on device logging. Useful for debugging whether computation is on expected'
+                        'CPUs or GPUs, otherwise unnecessary.')    
 
     parser.add_argument('training_path', type=str, help="Location of TFRecords for training.")
     parser.add_argument('cross_validation_path', type=str, help="Location of TFRecords for cross-validation.")
 
     return parser
+
+def param_string(args):
+    ''' Return a short string of the run parameters'''
+    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}".format(args.learning_rate, args.hidden_dim, args.hidden2_dim,
+                                                  args.batch_size, args.latent_dim, args.n_batches,
+                                                  args.batches_per_epoch, args.vocab_size)
+    return params

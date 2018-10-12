@@ -5,24 +5,16 @@ def main(args):
     import time
     import json
     import os
+    from vaeArgs import param_string
     from data_utils import get_train_dataset, get_validation_dataset
 
-    sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
+    sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=args.log_device,
+                                                       allow_soft_placement=True))
 
     epochs = np.floor(args.n_batches / args.batches_per_epoch).astype(int)
+    params = param_string(args)
     assert epochs > 0
     assert args.hidden_dim > args.hidden2_dim
-
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-V{}".format(args.learning_rate,
-                                                      args.hidden_dim,
-                                                      args.hidden2_dim,
-                                                      args.batch_size,
-                                                      args.latent_dim,
-                                                      args.n_batches,
-                                                      args.batches_per_epoch,
-                                                      args.vocab_size,
-                                                         args.validation_size)
-    
     print("Running with params", params)
     
     # Compile model
