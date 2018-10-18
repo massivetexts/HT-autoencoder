@@ -35,7 +35,9 @@ def getParser():
                     help='Turn on device logging. Useful for debugging whether computation is on expected'
                         'CPUs or GPUs, otherwise unnecessary.')   
     parser.add_argument('--idf_path', '-i', type=str,
-                help='Path to a .npy file with a {vocab-size} 1-D array of IDF term weights.')   
+                help='Path to a .npy file with a {vocab-size} 1-D array of IDF term weights.')
+    parser.add_argument('--input-gzip', '-z', action='store_true',
+            help='Specify that input TFRecords are gzip compressed.')   
 
     parser.add_argument('training_path', type=str, help="Location of TFRecords for training.")
     parser.add_argument('cross_validation_path', type=str, help="Location of TFRecords for cross-validation.")
