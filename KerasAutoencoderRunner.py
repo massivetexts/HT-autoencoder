@@ -8,9 +8,6 @@ def main(args, vae_model=None):
     from vaeArgs import param_string
     from data_utils import get_train_dataset, get_validation_dataset
 
-    sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=args.log_device,
-                                                       allow_soft_placement=True))
-
     epochs = np.floor(args.n_batches / args.batches_per_epoch).astype(int)
     params = param_string(args)
     assert epochs > 0
@@ -19,7 +16,7 @@ def main(args, vae_model=None):
     
     if not vae_model:
         # Compile model
-        vae = create_vae((args.trim_vocab if args.trim_vocab else args.vocab_size),
+        vae, decoder = create_vae((args.trim_vocab if args.trim_vocab else args.vocab_size),
                          args.hidden_dim, args.latent_dim,
                          intermediate_dim2=args.hidden2_dim,
                          learning_rate=args.learning_rate, epsilon_std=1.0)
@@ -104,12 +101,13 @@ def main(args, vae_model=None):
     with open(os.path.join(args.log_dir, params + '-log.json'), mode='a') as f:
         json.dump(log, f)
     
-    sess.close()
-    
-    return (vae, log)
+    return (vae, decoder, log)
 
 if __name__ == '__main__':
     from vaeArgs import getParser
     parser = getParser()   
     args = parser.parse_args()
+    sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=args.log_device,
+                                                       allow_soft_placement=True))
     main(args)
+    sess.close()
