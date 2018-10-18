@@ -1,9 +1,9 @@
 
-from keras.layers import Input, Dense, Lambda
-from keras.models import Model
-from keras import metrics, optimizers
-from keras import backend as K
-from keras.utils import multi_gpu_model
+from tensorflow.keras.layers import Input, Dense, Lambda
+from tensorflow.keras.models import Model
+from tensorflow.keras import metrics, optimizers
+from tensorflow.keras import backend as K
+from tensorflow.keras.utils import multi_gpu_model
 
 def create_vae(original_dim, intermediate_dim, latent_dim, intermediate_dim2=False, learning_rate=0.001,
                epsilon_std=1.0):
@@ -39,19 +39,25 @@ def create_vae(original_dim, intermediate_dim, latent_dim, intermediate_dim2=Fal
     # Loss Function, comparing the decoded mean to the original data
     xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
     kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-    vae_loss = K.mean(xent_loss + kl_loss)
 
+    # Loss Function, comparing the decoded mean to the original data
+    def calc_vae_loss(x, x_decoded_mean):
+        xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
+        kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+        return K.mean(xent_loss + kl_loss)
+    
     # RMSProp Optimizer. see https://keras.io/optimizers/
     optimizer = optimizers.RMSprop(lr=learning_rate, rho=0.9, epsilon=None, decay=0.0)
 
     # Automatically use all available GPUs
     try:
         model = multi_gpu_model(model)
-        print("Using multiple GPUs")
     except:
         pass
 
+    vae_loss = calc_vae_loss(x, x_decoded_mean)
     vae.add_loss(vae_loss)
     vae.compile(optimizer=optimizer)
+    #vae.compile(optimizer=optimizer, loss=calc_vae_loss)
     
     return vae
