@@ -47,7 +47,7 @@ def getParser():
 def param_string(args):
     ''' Return a short string of the run parameters'''
     idf = "-idf" if args.idf_path else ""
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}{}".format(args.learning_rate, args.hidden_dim,
+    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}{}".format("%.7f" % args.learning_rate, args.hidden_dim,
                                                              args.hidden2_dim, args.batch_size,
                                                              args.latent_dim, args.n_batches,
                                                              args.batches_per_epoch, args.vocab_size,

@@ -37,10 +37,6 @@ def create_vae(original_dim, intermediate_dim, latent_dim, intermediate_dim2=Fal
     vae = Model(x, x_decoded_mean)
 
     # Loss Function, comparing the decoded mean to the original data
-    xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
-    kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-
-    # Loss Function, comparing the decoded mean to the original data
     def calc_vae_loss(x, x_decoded_mean):
         xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
         kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
