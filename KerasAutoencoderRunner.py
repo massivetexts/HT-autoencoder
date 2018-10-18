@@ -14,9 +14,16 @@ def main(args, vae_model=None):
     assert args.hidden_dim > args.hidden2_dim
     print("Running with params", params)
     
+    trim_head = 200
+    
+    if args.trim_vocab == 0:
+        width = args.vocab_size - trim_head
+    else:
+        width = args.trim_vocab
+    
     if not vae_model:
         # Compile model
-        vae, decoder = create_vae((args.trim_vocab if args.trim_vocab else args.vocab_size),
+        vae, decoder = create_vae((width),
                          args.hidden_dim, args.latent_dim,
                          intermediate_dim2=args.hidden2_dim,
                          learning_rate=args.learning_rate, epsilon_std=1.0)
@@ -31,10 +38,10 @@ def main(args, vae_model=None):
 
     train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord",
                                       batch_size=args.batch_size, n_batches=args.n_batches,
-                                      trim_dim=args.trim_vocab, idf_path=args.idf_path,
-                                      compression=compression)
+                                      trim_dim=args.trim_vocab, trim_head=trim_head,
+                                      idf_path=args.idf_path, compression=compression)
     val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord",
-                                         n_pages=args.validation_size,
+                                         n_pages=args.validation_size, trim_head=trim_head,
                                          trim_dim=args.trim_vocab, idf_path=args.idf_path,
                                          compression=compression)
 
@@ -60,18 +67,14 @@ def main(args, vae_model=None):
     ##loss_iter = train_dataset.make_one_shot_iterator()
     ##lossdata = loss_iter.get_next()
     
-    if args.trim_vocab == 0:
-        width = args.vocab_size
-    else:
-        width = args.trim_vocab
 
     # Don't specify number of samples, just the width of the samples
     # For some reason, the Model specifies a large number of random samples,
     # But it doesn't seem to affect the quality of models
     traindata.set_shape({None,
-                         args.trim_vocab if args.trim_vocab else args.vocab_size})
+                         width})
     #lossdata.set_shape({None,
-    #                     args.trim_vocab if args.trim_vocab else args.vocab_size})
+    #                     width})
     start = time.time()
 
     # Train the autoencoder

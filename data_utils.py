@@ -20,9 +20,11 @@ def sparse_to_dense(sparse):
 
 def get_train_dataset(path, batch_size, n_batches, original_dim=202498, 
                       trim_dim=0, shuffle_buffer=20000, idf_path=None,
-                     compression="", repeat=3):
+                     compression="", repeat=3, trim_head=200):
     '''
     Note: Keep path input and shuffling settings consistent between runs.
+    
+    trim_head removes the first *n* words of the vocabulary.
     '''
     sparse_features = tfrecord_schema(original_dim)
     filenames = glob.glob(path)
@@ -35,11 +37,11 @@ def get_train_dataset(path, batch_size, n_batches, original_dim=202498,
     dataset = dataset.batch(batch_size)
     dataset = dataset.map(lambda x: tf.parse_example(x, features=sparse_features)['sparse'])
 
-    if trim_dim > 0:
-        dataset = dataset.map(lambda x: tf.sparse_slice(x, [0,0], [batch_size, trim_dim]) )
+    trim_end = (trim_dim+trim_head) if trim_dim else original_dim
+    dataset = dataset.map(lambda x: tf.sparse_slice(x, [0,trim_head], [batch_size, trim_dim if trim_dim else original_dim]) )
         
     if idf_path:
-        idf = np.load(idf_path)[:trim_dim if trim_dim else original_dim]
+        idf = np.load(idf_path)[trim_head:trim_end]
         dataset = dataset.map(lambda x: tf.cast(x, tf.float32) * idf)
         
     dataset = dataset.map(sparse_to_dense)
@@ -49,7 +51,7 @@ def get_train_dataset(path, batch_size, n_batches, original_dim=202498,
     return dataset
 
 def get_validation_dataset(path, n_pages, original_dim=202498, trim_dim=0,
-                           shuffle_buffer=20000, idf_path=None, compression=""):
+                           shuffle_buffer=20000, trim_head=200, idf_path=None, compression=""):
     '''
     Note: Keep path input and shuffling settings consistent between runs.
     '''
@@ -64,11 +66,11 @@ def get_validation_dataset(path, n_pages, original_dim=202498, trim_dim=0,
     dataset = dataset.batch(n_pages).take(1)
     dataset = dataset.map(lambda x: tf.parse_example(x, features=sparse_features)['sparse'])
     
-    if trim_dim > 0:
-        dataset = dataset.map(lambda x: tf.sparse_slice(x, [0,0], [n_pages, trim_dim]) )
-        
+    trim_end = (trim_dim+trim_head) if trim_dim else original_dim
+    dataset = dataset.map(lambda x: tf.sparse_slice(x, [0,trim_head], [n_pages, trim_dim if trim_dim else original_dim]) )
+
     if idf_path:
-        idf = np.load(idf_path)[:trim_dim if trim_dim else original_dim]
+        idf = np.load(idf_path)[trim_head:trim_end]
         dataset = dataset.map(lambda x: tf.cast(x, tf.float32) * idf)
     
     return dataset
