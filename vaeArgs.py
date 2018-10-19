@@ -37,7 +37,11 @@ def getParser():
     parser.add_argument('--idf_path', '-i', type=str,
                 help='Path to a .npy file with a {vocab-size} 1-D array of IDF term weights.')
     parser.add_argument('--input-gzip', '-z', action='store_true',
-            help='Specify that input TFRecords are gzip compressed.')   
+            help='Specify that input TFRecords are gzip compressed.')
+    parser.add_argument('--optimizer', '-o', choices=["RMSProp", "Adam"], default="RMSProp",
+            help='Choice of optimizer.')
+    parser.add_argument('--loss', '-S', choices=["Cross-entropy", "MSE"], default="Cross-entropy",
+            help="Loss function metric. This is combined with KL.")
 
     parser.add_argument('training_path', type=str, help="Location of TFRecords for training.")
     parser.add_argument('cross_validation_path', type=str, help="Location of TFRecords for cross-validation.")
@@ -47,9 +51,9 @@ def getParser():
 def param_string(args):
     ''' Return a short string of the run parameters'''
     idf = "-idf" if args.idf_path else ""
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}{}".format("%.7f" % args.learning_rate, args.hidden_dim,
+    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}-o{}-S{}{}".format("%.7f" % args.learning_rate, args.hidden_dim,
                                                              args.hidden2_dim, args.batch_size,
                                                              args.latent_dim, args.n_batches,
                                                              args.batches_per_epoch, args.vocab_size,
-                                                             args.trim_vocab, idf)
+                                                             args.trim_vocab, args.optimizer, args.loss, idf)
     return params

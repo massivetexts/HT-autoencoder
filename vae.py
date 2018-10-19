@@ -6,8 +6,8 @@ from keras.losses import mse, binary_crossentropy
 from keras import backend as K
 from keras.utils import multi_gpu_model
 
-def create_vae(original_dim, intermediate_dim, latent_dim, intermediate_dim2=False, learning_rate=0.001,
-               epsilon_std=1.):
+def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-entropy", optimizer="RMSProp",
+               intermediate_dim2=False, learning_rate=0.001, epsilon_std=1.):
 
     def sampling(args):
         z_mean, z_log_var = args
@@ -51,12 +51,21 @@ def create_vae(original_dim, intermediate_dim, latent_dim, intermediate_dim2=Fal
     
     # Loss Function, comparing the decoded mean to the original data
     def calc_vae_loss(inputs, outputs):
-        reconstruction_loss = original_dim * binary_crossentropy(inputs, outputs)
+        if loss_metric == "Cross-entropy":
+            reconstruction_loss = original_dim * binary_crossentropy(inputs, outputs)
+        elif loss_metric == "MSE":
+            reconstruction_loss = original_dim * mse(inputs, outputs)
         kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
         return K.mean(reconstruction_loss + kl_loss)
     
     # RMSProp Optimizer. see https://keras.io/optimizers/
-    optimizer = optimizers.RMSprop(lr=learning_rate, rho=0.9, epsilon=None, decay=0.0)
+    if optimizer == "RMSProp":
+        optimizer = optimizers.RMSprop(lr=learning_rate, rho=0.9, epsilon=None, decay=0.0)
+    elif optimizer == "Adam":
+        # Adam should be better with the sparsity seen in text
+        optimizer = optimizers.Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=None, 
+                                    decay=0.0, amsgrad=False)
+        
     
     vae_loss = calc_vae_loss(inputs, outputs)
     vae.add_loss(vae_loss)

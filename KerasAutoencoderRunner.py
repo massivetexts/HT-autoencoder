@@ -24,7 +24,8 @@ def main(args, vae_model=None):
     if not vae_model:
         # Compile model
         vae, decoder = create_vae((width),
-                         args.hidden_dim, args.latent_dim,
+                         args.hidden_dim, args.latent_dim, args.loss,
+                         args.optimizer,
                          intermediate_dim2=args.hidden2_dim,
                          learning_rate=args.learning_rate, epsilon_std=1.0)
     else:
