@@ -6,7 +6,7 @@ from keras.losses import mse, binary_crossentropy
 from keras import backend as K
 from keras.utils import multi_gpu_model
 
-def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-entropy", optimizer="RMSProp",
+def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="CrossEntropy", optimizer="RMSProp",
                intermediate_dim2=False, learning_rate=0.001, epsilon_std=1.):
 
     def sampling(args):
@@ -51,7 +51,7 @@ def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-en
     
     # Loss Function, comparing the decoded mean to the original data
     def calc_vae_loss(inputs, outputs):
-        if loss_metric == "Cross-entropy":
+        if loss_metric == "CrossEntropy":
             reconstruction_loss = original_dim * binary_crossentropy(inputs, outputs)
         elif loss_metric == "MSE":
             reconstruction_loss = original_dim * mse(inputs, outputs)

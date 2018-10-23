@@ -40,7 +40,7 @@ def getParser():
             help='Specify that input TFRecords are gzip compressed.')
     parser.add_argument('--optimizer', '-o', choices=["RMSProp", "Adam"], default="RMSProp",
             help='Choice of optimizer.')
-    parser.add_argument('--loss', '-S', choices=["Cross-entropy", "MSE"], default="Cross-entropy",
+    parser.add_argument('--loss', '-S', choices=["CrossEntropy", "MSE"], default="CrossEntropy",
             help="Loss function metric. This is combined with KL.")
 
     parser.add_argument('training_path', type=str, help="Location of TFRecords for training.")
