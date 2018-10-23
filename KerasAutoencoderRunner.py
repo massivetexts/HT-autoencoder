@@ -25,7 +25,7 @@ def main(args, vae_model=None):
         # Compile model
         vae, decoder = create_vae((width),
                          args.hidden_dim, args.latent_dim, args.loss,
-                         args.optimizer,
+                         args.optimizer, linear=args.linear,
                          intermediate_dim2=args.hidden2_dim,
                          learning_rate=args.learning_rate, epsilon_std=1.0)
     else:
@@ -40,11 +40,11 @@ def main(args, vae_model=None):
     train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord",
                                       batch_size=args.batch_size, n_batches=args.n_batches,
                                       trim_dim=args.trim_vocab, trim_head=trim_head,
-                                      idf_path=args.idf_path, compression=compression)
+                                      idf_path=args.idf_path, compression=compression, max_path=args.max_path)
     val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord",
                                          n_pages=args.validation_size, trim_head=trim_head,
                                          trim_dim=args.trim_vocab, idf_path=args.idf_path,
-                                         compression=compression)
+                                         compression=compression, max_path=args.max_path)
 
     # Initialize Variables
     init = tf.global_variables_initializer()
@@ -72,7 +72,7 @@ def main(args, vae_model=None):
     # Don't specify number of samples, just the width of the samples
     # For some reason, the Model specifies a large number of random samples,
     # But it doesn't seem to affect the quality of models
-    traindata.set_shape({None,
+    traindata.set_shape({args.batch_size,
                          width})
     #lossdata.set_shape({None,
     #                     width})
@@ -105,7 +105,7 @@ def main(args, vae_model=None):
     with open(os.path.join(args.log_dir, params + '-log.json'), mode='a') as f:
         json.dump(log, f)
     
-    return (vae, decoder, log)
+    return (vae, log)
 
 if __name__ == '__main__':
     from vaeArgs import getParser

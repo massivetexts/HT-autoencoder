@@ -1,13 +1,12 @@
 
 from keras.layers import Input, Dense, Lambda
 from keras.models import Model
-from keras import optimizers
-from keras.losses import mse, binary_crossentropy
+from keras import optimizers, losses, regularizers
 from keras import backend as K
 from keras.utils import multi_gpu_model
 
 def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-entropy", optimizer="RMSProp",
-               intermediate_dim2=False, learning_rate=0.001, epsilon_std=1.):
+               intermediate_dim2=False, learning_rate=0.001, epsilon_std=1., linear=False):
 
     def sampling(args):
         z_mean, z_log_var = args
@@ -15,11 +14,20 @@ def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-en
                                   stddev=epsilon_std)
         return z_mean + K.exp(z_log_var / 2) * epsilon
     
+    if linear:
+        activation = 'linear'
+        activation_out = 'linear'
+        kernel_regularizer=regularizers.l2(0.00005)
+    else:
+        activation = 'relu'
+        activation_out = 'sigmoid'
+        kernel_regularizer=regularizers.l2(0.00005)
+        
     # Build Encoder
     inputs = Input(shape=(original_dim,))
-    h = Dense(intermediate_dim, activation='relu', name='HiddenLayer1')(inputs)
+    h = Dense(intermediate_dim, activation=activation, kernel_regularizer=kernel_regularizer, name='HiddenLayer1')(inputs)
     if intermediate_dim2:
-        h = Dense(intermediate_dim2, activation='relu', name='HiddenLayer2')(h)
+        h = Dense(intermediate_dim2, activation=activation, kernel_regularizer=kernel_regularizer, name='HiddenLayer2')(h)
 
     z_mean = Dense(latent_dim, name='z_mean')(h)
     z_log_var = Dense(latent_dim, name='z_log_var')(h)
@@ -30,11 +38,11 @@ def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-en
     # build Decoder
     latent_inputs = Input(shape=(latent_dim,), name='DecoderInput')
     if intermediate_dim2:
-        h2_decoded = Dense(intermediate_dim2, activation='relu', name="DecoderHLayer2")(latent_inputs)
-        h_decoded = Dense(intermediate_dim, activation='relu', name="DecoderHLayer1")(h2_decoded)
+        h2_decoded = Dense(intermediate_dim2, activation=activation, kernel_regularizer=kernel_regularizer, name="DecoderHLayer2")(latent_inputs)
+        h_decoded = Dense(intermediate_dim, activation=activation, kernel_regularizer=kernel_regularizer, name="DecoderHLayer1")(h2_decoded)
     else:
-        h_decoded = Dense(intermediate_dim, activation='relu', name="DecoderHLayer1")(latent_inputs)
-    decoder_outputs = Dense(original_dim, activation='sigmoid', name="ReconstructedOutput")(h_decoded)
+        h_decoded = Dense(intermediate_dim, activation=activation, kernel_regularizer=kernel_regularizer, name="DecoderHLayer1")(latent_inputs)
+    decoder_outputs = Dense(original_dim, activation=activation_out, name="ReconstructedOutput")(h_decoded)
     decoder = Model(latent_inputs, decoder_outputs, name='decoder')
     decoder.summary()
 
@@ -52,9 +60,9 @@ def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-en
     # Loss Function, comparing the decoded mean to the original data
     def calc_vae_loss(inputs, outputs):
         if loss_metric == "Cross-entropy":
-            reconstruction_loss = original_dim * binary_crossentropy(inputs, outputs)
+            reconstruction_loss = original_dim * losses.binary_crossentropy(inputs, outputs)
         elif loss_metric == "MSE":
-            reconstruction_loss = original_dim * mse(inputs, outputs)
+            reconstruction_loss = original_dim * losses.mse(inputs, outputs)
         kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
         return K.mean(reconstruction_loss + kl_loss)
     
@@ -72,4 +80,4 @@ def create_vae(original_dim, intermediate_dim, latent_dim, loss_metric="Cross-en
     vae.compile(optimizer=optimizer)
     #vae.compile(optimizer=optimizer, loss=calc_vae_loss)
     
-    return vae, decoder
+    return vae
