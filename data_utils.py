@@ -9,7 +9,7 @@ def tfrecord_schema(original_dim=202498):
                                                   dtype=tf.int64,
                                                   size=[original_dim]),
                   "volid": tf.FixedLenFeature((), tf.string, default_value=""),
-                  'page_seq': tf.FixedLenFeature((), tf.int64)
+                  #'page_seq': tf.FixedLenFeature((), tf.string, default_value="")
                   }
 
 def sparse_to_dense(sparse):
@@ -20,7 +20,8 @@ def sparse_to_dense(sparse):
 
 def get_train_dataset(path, batch_size, n_batches, original_dim=202498, 
                       trim_dim=0, shuffle_buffer=20000, idf_path=None,
-                     compression="", repeat=3, trim_head=200):
+                      max_path=None,
+                     compression="", repeat=10, trim_head=200):
     '''
     Note: Keep path input and shuffling settings consistent between runs.
     
@@ -43,15 +44,19 @@ def get_train_dataset(path, batch_size, n_batches, original_dim=202498,
     if idf_path:
         idf = np.load(idf_path)[trim_head:trim_end]
         dataset = dataset.map(lambda x: tf.cast(x, tf.float32) * idf)
+
+    if max_path:
+        maxarr = np.load(max_path)[trim_head:trim_end]
+        dataset = dataset.map(lambda x: tf.cast(x, tf.float32) / maxarr)
         
     dataset = dataset.map(sparse_to_dense)
-    
     dataset = dataset.repeat(repeat)
     
     return dataset
 
 def get_validation_dataset(path, n_pages, original_dim=202498, trim_dim=0,
-                           shuffle_buffer=20000, trim_head=200, idf_path=None, compression=""):
+                           shuffle_buffer=20000, trim_head=200, idf_path=None,
+                           max_path=None, compression=""):
     '''
     Note: Keep path input and shuffling settings consistent between runs.
     '''
@@ -72,5 +77,9 @@ def get_validation_dataset(path, n_pages, original_dim=202498, trim_dim=0,
     if idf_path:
         idf = np.load(idf_path)[trim_head:trim_end]
         dataset = dataset.map(lambda x: tf.cast(x, tf.float32) * idf)
+    
+    if max_path:
+        maxarr = np.load(max_path)[trim_head:trim_end]
+        dataset = dataset.map(lambda x: tf.cast(x, tf.float32) / maxarr)
     
     return dataset

@@ -33,9 +33,13 @@ def getParser():
                         help='Number of pages to use for cross-validation.')
     parser.add_argument('--log-device', '-d', action='store_true',
                     help='Turn on device logging. Useful for debugging whether computation is on expected'
-                        'CPUs or GPUs, otherwise unnecessary.')   
+                        'CPUs or GPUs, otherwise unnecessary.') 
+    parser.add_argument('--linear', action='store_true',
+                    help='Use linear activations. Closer to PCA.') 
     parser.add_argument('--idf_path', '-i', type=str,
-                help='Path to a .npy file with a {vocab-size} 1-D array of IDF term weights.')
+            help='Path to a .npy file with a {vocab-size} 1-D array of IDF term weights.')
+    parser.add_argument('--max_path', type=str,
+            help='Path to a .npy file with a {vocab-size} 1-D array of Max term counts.')
     parser.add_argument('--input-gzip', '-z', action='store_true',
             help='Specify that input TFRecords are gzip compressed.')
     parser.add_argument('--optimizer', '-o', choices=["RMSProp", "Adam"], default="RMSProp",
@@ -51,9 +55,12 @@ def getParser():
 def param_string(args):
     ''' Return a short string of the run parameters'''
     idf = "-idf" if args.idf_path else ""
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}-o{}-S{}{}".format("%.7f" % args.learning_rate, args.hidden_dim,
+    maxp = "-max" if args.max_path else ""
+    lin = "-lin" if args.linear else ""
+    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}-o{}-S{}{}{}".format("%.7f" % args.learning_rate, args.hidden_dim,
                                                              args.hidden2_dim, args.batch_size,
                                                              args.latent_dim, args.n_batches,
                                                              args.batches_per_epoch, args.vocab_size,
-                                                             args.trim_vocab, args.optimizer, args.loss, idf)
+                                                             args.trim_vocab, args.optimizer, args.loss, idf, maxp,
+                                                                     lin)
     return params
