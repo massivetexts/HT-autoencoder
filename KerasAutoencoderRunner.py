@@ -11,20 +11,17 @@ def main(args, vae_model=None):
     epochs = np.floor(args.n_batches / args.batches_per_epoch).astype(int)
     params = param_string(args)
     assert epochs > 0
-    assert args.hidden_dim > args.hidden2_dim
     print("Running with params", params)
     
     trim_head = 200
+    trim_dim = args.dims[0] if (args.dims[0] < args.vocab_size) else None
     
-    if args.trim_vocab == 0:
-        width = args.vocab_size - trim_head
-    else:
-        width = args.trim_vocab
-    
+    if not trim_dim:
+        args.dims[0] = args.vocab_size - trim_head
+
     if not vae_model:
         # Compile model
-        vae, decoder = create_vae((width),
-                         args.hidden_dim, args.latent_dim, args.loss,
+        vae, decoder = create_vae(args.dims, args.loss,
                          args.optimizer, linear=args.linear,
                          intermediate_dim2=args.hidden2_dim,
                          learning_rate=args.learning_rate, epsilon_std=1.0)
@@ -39,11 +36,11 @@ def main(args, vae_model=None):
 
     train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord",
                                       batch_size=args.batch_size, n_batches=args.n_batches,
-                                      trim_dim=args.trim_vocab, trim_head=trim_head,
+                                      trim_dim=trim_dim, trim_head=trim_head,
                                       idf_path=args.idf_path, compression=compression, max_path=args.max_path)
     val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord",
                                          n_pages=args.validation_size, trim_head=trim_head,
-                                         trim_dim=args.trim_vocab, idf_path=args.idf_path,
+                                         trim_dim=trim_dim, idf_path=args.idf_path,
                                          compression=compression, max_path=args.max_path)
 
     # Initialize Variables
