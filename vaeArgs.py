@@ -5,17 +5,11 @@ def getParser():
     parser = argparse.ArgumentParser(description='Train Autoencoder')
     parser.add_argument('--batch-size', '-b', type=int, default=256,
                         help='Size of training batches')
+    parser.add_argument('--dims', '-D', type=int, nargs='+', default=[202498, 1000, 200],
+                    help='Dimensions of the layers, from input, through hidden dimensions, to output.'
+                        'If input is smaller than the vocab_size, training data will be trimmed to top terms.')
     parser.add_argument('--vocab-size', '-v', type=int, default=202498,
                         help='Size of the vocabulary.')
-    parser.add_argument('--trim-vocab', '-t', type=int, default=0,
-                        help='Cut off the original vocabulary. '
-                        'Only keeps the top {trim-vocab} words for training.')
-    parser.add_argument('--latent-dim', '-l', type=int, default=200,
-                        help='Number of output dimensions.')
-    parser.add_argument('--hidden-dim', '-H', type=int, default=1500,
-                        help='Size of first hidden layer.')
-    parser.add_argument('--hidden2-dim', '-G', type=int, default=0,
-                        help='Size of second hidden layer. If zero, layer is not instantiated.')
     parser.add_argument('--learning-rate', '-L', type=float, default=0.0001,
                         help='Learning rate for optimizer.')
     parser.add_argument('--n-batches', '-N', type=int, default=5096,
@@ -57,10 +51,19 @@ def param_string(args):
     idf = "-idf" if args.idf_path else ""
     maxp = "-max" if args.max_path else ""
     lin = "-lin" if args.linear else ""
-    params = "L{}-H{}-G{}-b{}-l{}-N{}-E{}-v{}-t{}-o{}-S{}{}{}".format("%.7f" % args.learning_rate, args.hidden_dim,
-                                                             args.hidden2_dim, args.batch_size,
-                                                             args.latent_dim, args.n_batches,
+    dims = "_".join(args.dims)
+    params = "L{}-D{}-b{}-N{}-E{}-v{}-o{}-S{}{}{}".format("%.7f" % args.learning_rate, dims, 
+                                                              args.batch_size, args.n_batches,
                                                              args.batches_per_epoch, args.vocab_size,
-                                                             args.trim_vocab, args.optimizer, args.loss, idf, maxp,
+                                                             args.optimizer, args.loss, idf, maxp,
                                                                      lin)
     return params
+
+def parse_param_string(param):
+    import re
+    parser = getParser()
+    arg_string = re.sub('-(\w)', ' -\\1', '-' + param).replace('-D', '-D ').replace('_', ' ')
+    arg_string = arg_string.replace('-idf', '--idf_path idf_placeholder')
+    arg_list = arg_string.split(' ')[1:]
+    args = parser.parse_args(['placeholder', 'placeholder2'] + arg_list)
+    return args
