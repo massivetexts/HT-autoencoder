@@ -20,9 +20,8 @@ def create_vae(dims, loss_metric="CrossEntropy", optimizer="RMSProp",
     # The dims arg should be a string of format '1000-200-100-50',
     # going from the input size to the hidden layer sizes and finally the latent
     # dimensions
-    diml = [int(d) for d in dims.split('-')]
-    assert len(diml) > 2
-    original_dim, hidden_dims, latent_dim = diml[0], diml[1:-1], diml[-1]
+    assert len(dims) > 2
+    original_dim, hidden_dims, latent_dim = dims[0], dims[1:-1], dims[-1]
     
     if linear:
         activation = 'linear'
@@ -36,7 +35,7 @@ def create_vae(dims, loss_metric="CrossEntropy", optimizer="RMSProp",
     # Build Encoder
     inputs = Input(shape=(original_dim,))
 
-    for i, hdim in hidden_dims:
+    for i, hdim in enumerate(hidden_dims):
         layer = Dense(hdim, activation=activation, 
                       kernel_regularizer=kernel_regularizer,
                       name='HiddenLayer%d' %i)
@@ -56,7 +55,7 @@ def create_vae(dims, loss_metric="CrossEntropy", optimizer="RMSProp",
     # build Decoder
     latent_inputs = Input(shape=(latent_dim,), name='DecoderInput')
     
-    for i, hdim in hidden_dims[::-1]:
+    for i, hdim in enumerate(hidden_dims[::-1]):
         j = len(hidden_dims) - i
         layer = Dense(hdim,
                       activation=activation, kernel_regularizer=kernel_regularizer,

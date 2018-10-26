@@ -28,6 +28,8 @@ def get_train_dataset(path, batch_size, n_batches, original_dim=202498,
     trim_head removes the first *n* words of the vocabulary.
     '''
     sparse_features = tfrecord_schema(original_dim)
+    if compression == "GZIP":
+        path = path + ".gz"
     filenames = glob.glob(path)
     
     np.random.seed(seed=123456)

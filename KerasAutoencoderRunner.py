@@ -1,4 +1,4 @@
-def main(args, vae_model=None):
+def main(args, vae_model=None, callbacks=[]):
     import tensorflow as tf
     import numpy as np
     from vae import create_vae
@@ -21,9 +21,8 @@ def main(args, vae_model=None):
 
     if not vae_model:
         # Compile model
-        vae, decoder = create_vae(args.dims, args.loss,
+        vae = create_vae(args.dims, args.loss,
                          args.optimizer, linear=args.linear,
-                         intermediate_dim2=args.hidden2_dim,
                          learning_rate=args.learning_rate, epsilon_std=1.0)
     else:
         vae = vae_model
@@ -34,11 +33,11 @@ def main(args, vae_model=None):
     else:
         compression = ""
 
-    train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord",
+    train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecor*",
                                       batch_size=args.batch_size, n_batches=args.n_batches,
                                       trim_dim=trim_dim, trim_head=trim_head,
                                       idf_path=args.idf_path, compression=compression, max_path=args.max_path)
-    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord",
+    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord*",
                                          n_pages=args.validation_size, trim_head=trim_head,
                                          trim_dim=trim_dim, idf_path=args.idf_path,
                                          compression=compression, max_path=args.max_path)
@@ -70,9 +69,9 @@ def main(args, vae_model=None):
     # For some reason, the Model specifies a large number of random samples,
     # But it doesn't seem to affect the quality of models
     traindata.set_shape({args.batch_size,
-                         width})
+                         args.dims[0]})
     #lossdata.set_shape({None,
-    #                     width})
+    #                     args.dims[0]})
     start = time.time()
 
     # Train the autoencoder
@@ -82,7 +81,8 @@ def main(args, vae_model=None):
             steps_per_epoch=args.batches_per_epoch,
             validation_data=(val_data_dense, None),
             #validation_data=(val_data_dense, val_data_dense),
-            validation_steps = 1
+            validation_steps = 1,
+            callbacks=callbacks
             )
 
     passed = time.time() - start

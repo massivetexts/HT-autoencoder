@@ -51,7 +51,7 @@ def param_string(args):
     idf = "-idf" if args.idf_path else ""
     maxp = "-max" if args.max_path else ""
     lin = "-lin" if args.linear else ""
-    dims = "_".join(args.dims)
+    dims = "_".join([str(d) for d in args.dims])
     params = "L{}-D{}-b{}-N{}-E{}-v{}-o{}-S{}{}{}".format("%.7f" % args.learning_rate, dims, 
                                                               args.batch_size, args.n_batches,
                                                              args.batches_per_epoch, args.vocab_size,
