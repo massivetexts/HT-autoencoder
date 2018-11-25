@@ -1,4 +1,4 @@
-def main(args, vae_model=None, callbacks=[]):
+def main(args, vae_model=None, callbacks=[], restore_checkpoint=False):
     import tensorflow as tf
     import numpy as np
     from vae import create_vae
@@ -21,11 +21,20 @@ def main(args, vae_model=None, callbacks=[]):
 
     if not vae_model:
         # Compile model
-        vae = create_vae(args.dims, args.loss,
-                         args.optimizer, linear=args.linear,
+        vae = create_vae(args.dims,
+                         distloss=args.distloss,
+                         alpha = args.alpha, lambda_ = args.lambda_,
                          learning_rate=args.learning_rate, epsilon_std=1.0)
     else:
         vae = vae_model
+        
+    if restore_checkpoint:
+        vae.load_weights('checkpoint.h5')
+        # If restoring a model, shuffle the training texts randomly rather
+        # than using the hardcoded seed. Validation data stays the same.
+        seed=np.random.randint(10**5)
+    else:
+        seed = 123456
 
     # Prepare reference to input data
     if args.input_gzip:
@@ -33,11 +42,11 @@ def main(args, vae_model=None, callbacks=[]):
     else:
         compression = ""
 
-    train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecor*",
+    train_dataset = get_train_dataset(path=args.training_path + "/*.tfrecord", seed=seed,
                                       batch_size=args.batch_size, n_batches=args.n_batches,
                                       trim_dim=trim_dim, trim_head=trim_head,
                                       idf_path=args.idf_path, compression=compression, max_path=args.max_path)
-    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord*",
+    val_dataset = get_validation_dataset(path=args.cross_validation_path + "/*.tfrecord",
                                          n_pages=args.validation_size, trim_head=trim_head,
                                          trim_dim=trim_dim, idf_path=args.idf_path,
                                          compression=compression, max_path=args.max_path)
@@ -99,16 +108,27 @@ def main(args, vae_model=None, callbacks=[]):
                params=params
     )
 
+    log['history']['loss'] = [float(np.mean(l)) for l in log['history']['loss']]
+    log['history']['val_loss'] = [float(np.mean(l)) for l in log['history']['val_loss']]
+
     with open(os.path.join(args.log_dir, params + '-log.json'), mode='a') as f:
         json.dump(log, f)
     
-    return (vae, log)
+    return (vae, train_dataset, val_dataset, log)
 
 if __name__ == '__main__':
     from vaeArgs import getParser
+    from keras.callbacks import ModelCheckpoint, EarlyStopping
+    import tensorflow as tf
     parser = getParser()   
     args = parser.parse_args()
     sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=args.log_device,
                                                        allow_soft_placement=True))
-    main(args)
+    
+    # Save checkpoints when val_loss improves
+    checkpointer = ModelCheckpoint(filepath='checkpoint.h5', verbose=1, save_best_only=True)
+    # Stop training when the model is no longer improving
+    stopper = EarlyStopping(monitor='val_loss', min_delta=0, patience=4, verbose=1, mode='auto')
+    main(args, callbacks=[checkpointer, stopper], restore_checkpoint=args.restore)
+    
     sess.close()

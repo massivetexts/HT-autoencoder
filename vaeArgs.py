@@ -28,18 +28,22 @@ def getParser():
     parser.add_argument('--log-device', '-d', action='store_true',
                     help='Turn on device logging. Useful for debugging whether computation is on expected'
                         'CPUs or GPUs, otherwise unnecessary.') 
-    parser.add_argument('--linear', action='store_true',
-                    help='Use linear activations. Closer to PCA.') 
     parser.add_argument('--idf_path', '-i', type=str,
             help='Path to a .npy file with a {vocab-size} 1-D array of IDF term weights.')
     parser.add_argument('--max_path', type=str,
             help='Path to a .npy file with a {vocab-size} 1-D array of Max term counts.')
     parser.add_argument('--input-gzip', '-z', action='store_true',
             help='Specify that input TFRecords are gzip compressed.')
-    parser.add_argument('--optimizer', '-o', choices=["RMSProp", "Adam"], default="RMSProp",
+    parser.add_argument('--optimizer', '-o', choices=["RMSProp", "Adam"], default="Adam",
             help='Choice of optimizer.')
-    parser.add_argument('--loss', '-S', choices=["CrossEntropy", "MSE"], default="CrossEntropy",
-            help="Loss function metric. This is combined with KL.")
+    parser.add_argument('--distloss', '-k', choices=["ELBO", "MMD", "None"], default="ELBO",
+            help="Second loss metric, for addressing the distribution. Usually ELBO (which is KL divergence-based) for Variational Autoencoders.")
+    parser.add_argument('--lambda', '-l', type=float, default=1, dest='lambda_',
+            help="Lambda, from InfoVAE generalization.")
+    parser.add_argument('--alpha', '-a', type=float, default=0,
+            help="Alpha, from InfoVAE generalization.")
+    parser.add_argument('--restore', action='store_true',
+            help="Restore model from checkpoint in /tmp/weights.h5")
 
     parser.add_argument('training_path', type=str, help="Location of TFRecords for training.")
     parser.add_argument('cross_validation_path', type=str, help="Location of TFRecords for cross-validation.")
@@ -50,13 +54,13 @@ def param_string(args):
     ''' Return a short string of the run parameters'''
     idf = "-idf" if args.idf_path else ""
     maxp = "-max" if args.max_path else ""
-    lin = "-lin" if args.linear else ""
     dims = "_".join([str(d) for d in args.dims])
-    params = "L{}-D{}-b{}-N{}-E{}-v{}-o{}-S{}{}{}".format("%.7f" % args.learning_rate, dims, 
+    params = "L{}-D{}-b{}-N{}-E{}-l{}-a{}-v{}-k{}{}{}".format("%.7f" % args.learning_rate, dims, 
                                                               args.batch_size, args.n_batches,
-                                                             args.batches_per_epoch, args.vocab_size,
-                                                             args.optimizer, args.loss, idf, maxp,
-                                                                     lin)
+                                                             args.batches_per_epoch, args.lambda_,
+                                                             args.alpha, args.vocab_size,
+                                                             args.distloss,
+                                                              idf, maxp)
     return params
 
 def parse_param_string(param):
@@ -67,3 +71,10 @@ def parse_param_string(param):
     arg_list = arg_string.split(' ')[1:]
     args = parser.parse_args(['placeholder', 'placeholder2'] + arg_list)
     return args
+
+def path_to_param(filepath):
+    '''
+    Extract Autoencoder args from filename
+    '''
+    import os
+    return os.path.split(os.path.splitext(filepath)[0])[-1].replace('-keras-full', '')

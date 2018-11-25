@@ -19,8 +19,8 @@ def sparse_to_dense(sparse):
 
 
 def get_train_dataset(path, batch_size, n_batches, original_dim=202498, 
-                      trim_dim=0, shuffle_buffer=20000, idf_path=None,
-                      max_path=None,
+                      trim_dim=0, shuffle_buffer=30000, idf_path=None,
+                      max_path=None, seed=123456,
                      compression="", repeat=10, trim_head=200):
     '''
     Note: Keep path input and shuffling settings consistent between runs.
@@ -57,13 +57,15 @@ def get_train_dataset(path, batch_size, n_batches, original_dim=202498,
     return dataset
 
 def get_validation_dataset(path, n_pages, original_dim=202498, trim_dim=0,
-                           shuffle_buffer=20000, trim_head=200, idf_path=None,
+                           shuffle_buffer=30000, trim_head=200, idf_path=None,
                            max_path=None, compression=""):
     '''
     Note: Keep path input and shuffling settings consistent between runs.
     '''
     
     sparse_features = tfrecord_schema(original_dim)
+    if compression == "GZIP":
+        path = path + ".gz"
     filenames = glob.glob(path)
     
     np.random.seed(seed=123456)
