@@ -32,7 +32,7 @@ def get_train_dataset(path, batch_size, n_batches, original_dim=202498,
         path = path + ".gz"
     filenames = glob.glob(path)
     
-    np.random.seed(seed=123456)
+    np.random.seed(seed=seed)
     np.random.shuffle(filenames)
     
     dataset = tf.data.TFRecordDataset(filenames, compression_type=compression, num_parallel_reads=2)
@@ -57,7 +57,7 @@ def get_train_dataset(path, batch_size, n_batches, original_dim=202498,
     return dataset
 
 def get_validation_dataset(path, n_pages, original_dim=202498, trim_dim=0,
-                           shuffle_buffer=30000, trim_head=200, idf_path=None,
+                           shuffle_buffer=30000, trim_head=200, idf_path=None, seed=123456,
                            max_path=None, compression=""):
     '''
     Note: Keep path input and shuffling settings consistent between runs.
@@ -68,7 +68,7 @@ def get_validation_dataset(path, n_pages, original_dim=202498, trim_dim=0,
         path = path + ".gz"
     filenames = glob.glob(path)
     
-    np.random.seed(seed=123456)
+    np.random.seed(seed=seed)
     np.random.shuffle(filenames)
     
     dataset = tf.data.TFRecordDataset(filenames, compression_type=compression).shuffle(shuffle_buffer, seed=30303)
